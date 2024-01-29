@@ -1,8 +1,9 @@
 import React from "react";
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, View, Text, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import CheckBox from "expo-checkbox";
+import { router } from "expo-router";
 
 const Todo = ({ todo, data, setData, url }) => {
   const handleValueChange = () => {
@@ -45,15 +46,24 @@ const Todo = ({ todo, data, setData, url }) => {
   };
 
   return (
-    <View style={styles.todoItem}>
+    <Pressable
+      style={styles.todoItem}
+      onPress={() => router.push(`/todo/${todo.id}`)}
+    >
       <View>
-        <Text style={styles.todoTitle}>{todo.title}</Text>
+        <Text
+          style={
+            todo.done ? [styles.todoTitle, styles.todoDone] : styles.todoTitle
+          }
+        >
+          {todo.title}
+        </Text>
         <Text>{todo.description}</Text>
       </View>
       <View>
         <CheckBox value={todo.done} onValueChange={handleValueChange} />
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -69,6 +79,9 @@ const styles = StyleSheet.create({
   },
   todoTitle: {
     fontWeight: "bold",
+  },
+  todoDone: {
+    textDecorationLine: "line-through",
   },
 });
 

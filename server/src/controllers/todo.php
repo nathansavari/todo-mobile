@@ -48,6 +48,22 @@ class TodoRepository
         return json_encode(['message' => $message]);
     }
 
+    public static function getTodo(int $todo_id): string
+    {
+        try {
+            $statement = DatabaseConnection::getInstance()->prepare("SELECT * FROM items WHERE id=?");
+            $statement->execute([$todo_id]);
+            $todo = $statement->fetch();
+            $message = $todo ? json_encode($todo) : 'Todo not found';
+        } catch (Exception $e) {
+            $message = 'Error: ' . $e->getMessage();
+        } finally {
+            DatabaseConnection::closeConnection();
+        }
+
+        return $message;
+    }
+
 
     public static function checkTodoOffline(string $title, string $description): string
     {

@@ -36,11 +36,6 @@ const TodoInput = ({ newTodo, setNewTodo, createTodo, isValid }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    marginTop: 100,
-  },
   inputContainer: {
     margin: 20,
   },
@@ -49,10 +44,6 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     padding: 10,
     marginBottom: 10,
-  },
-  head: {
-    fontSize: 40,
-    marginHorizontal: 20,
   },
   errorText: {
     color: "red",

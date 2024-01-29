@@ -54,4 +54,10 @@ switch ($params['action']) {
             print_r($todos);
         }
         break;
+    case 'getTodo':
+        if ($params['todoId']) {
+            $todos = TodoRepository::getTodo($params['todoId']);
+            print_r($todos);
+        }
+        break;
 }
