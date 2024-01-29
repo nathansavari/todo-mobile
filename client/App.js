@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import CheckBox from "expo-checkbox";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import axios from "axios";
 
 export default function App() {
@@ -19,32 +20,22 @@ export default function App() {
 
   const url = process.env.EXPO_PUBLIC_API_URL;
 
-  function timeoutFetch(url, options, timeout = 3000) {
-    return Promise.race([
-      fetch(url, options),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timed out")), timeout)
-      ),
-    ]);
-  }
-
   useEffect(() => {
     getData();
   }, []);
 
   function getData() {
-    timeoutFetch(url, {
-      method: "POST",
-    })
+    axios
+      .post(url, {}, { timeout: 2000 })
       .then((response) => {
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error("Network response was not ok");
         }
-        return response.json();
+        return response.data;
       })
-      .then((json) => {
-        setData(json);
-        AsyncStorage.setItem("todos", JSON.stringify(json));
+      .then((data) => {
+        setData(data);
+        AsyncStorage.setItem("todos", JSON.stringify(data));
         return AsyncStorage.getItem("unsynced_changes");
       })
       .then((unsyncedChanges) => {
@@ -54,11 +45,12 @@ export default function App() {
         return Promise.all(
           changes.map((change) => {
             const requestOptions = {
-              method: "POST",
               headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
               },
-              body: `action=${change.action}&todoId=${encodeURIComponent(
+              data: `action=${encodeURIComponent(
+                change.action
+              )}&todoId=${encodeURIComponent(
                 change.todoId
               )}&done=${encodeURIComponent(
                 change.done
@@ -67,12 +59,15 @@ export default function App() {
               )}&description=${encodeURIComponent(change.description)}`,
             };
 
-            return fetch(url, requestOptions)
+            return axios
+              .post(url, requestOptions.data, {
+                headers: requestOptions.headers,
+              })
               .then((response) => {
-                if (!response.ok) {
+                if (response.status !== 200) {
                   throw new Error("Failed to sync change");
                 }
-                return response.json();
+                return response.data;
               })
               .catch((error) => console.log("Sync error:", error));
           })
@@ -80,18 +75,14 @@ export default function App() {
       })
       .then(() => {
         AsyncStorage.setItem("unsynced_changes", JSON.stringify([]));
-        // Fetch data again to refresh UI
-        return fetch(url, { method: "POST" });
+        // Fetch data again to refresh UI using axios
+        return axios.post(url);
       })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
+        setData(response.data);
       })
-      .then((json) => setData(json))
       .catch((error) => {
-        console.error("Fetch error:", error);
+        console.error("Axios error:", error);
         // Load local data if there is a network error
         loadLocalData();
       });
