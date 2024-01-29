@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  Pressable,
-  TextInput,
-} from "react-native";
-import CheckBox from "expo-checkbox";
+import { StyleSheet, Text, ScrollView } from "react-native";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import Todo from "./components/Todo";
+import TodoInput from "./components/TodoInput";
 
 import axios from "axios";
 
 export default function App() {
   const [data, setData] = useState([]);
   const [newTodo, setNewTodo] = useState({ title: "", description: "" });
-  const [isValid, setIsValid] = useState(true); // New state to track validation
+  const [isValid, setIsValid] = useState(true);
 
   const url = process.env.EXPO_PUBLIC_API_URL;
 
@@ -137,8 +133,6 @@ export default function App() {
 
         data.unshift(thenewtodo);
 
-        console.log(data);
-
         setData(data);
         AsyncStorage.setItem("todos", JSON.stringify(data));
         loadLocalData();
@@ -161,100 +155,14 @@ export default function App() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.head}>Todolist</Text>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Title"
-          value={newTodo.title}
-          onChangeText={(text) => setNewTodo({ ...newTodo, title: text })}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Description"
-          value={newTodo.description}
-          onChangeText={(text) => setNewTodo({ ...newTodo, description: text })}
-        />
-        {!isValid && (
-          <Text style={styles.errorText}>
-            Title and Description are required.
-          </Text>
-        )}
-
-        <Pressable
-          onPress={createTodo}
-          style={{
-            padding: 10,
-            backgroundColor: "teal",
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ color: "white" }}>Add Todo</Text>
-        </Pressable>
-      </View>
+      <TodoInput
+        newTodo={newTodo}
+        setNewTodo={setNewTodo}
+        createTodo={createTodo}
+        isValid={isValid}
+      />
       {data.map((todo, index) => (
-        <View key={index} style={styles.todoItem}>
-          <View>
-            <Text style={styles.todoTitle}>{todo.title}</Text>
-            <Text>{todo.description}</Text>
-          </View>
-          <View>
-            <CheckBox
-              value={todo.done}
-              onValueChange={() => {
-                const updatedData = data.map((item) => {
-                  if (
-                    item.id === todo.id ||
-                    (item.description === todo.description &&
-                      item.title === todo.title)
-                  ) {
-                    return { ...item, done: !item.done };
-                  }
-                  return item;
-                });
-
-                setData(updatedData);
-                AsyncStorage.setItem("todos", JSON.stringify(updatedData));
-
-                axios
-                  .post(
-                    url,
-                    `action=check&todoId=${encodeURIComponent(todo.id)}`,
-                    {
-                      headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                      },
-                      timeout: 2000,
-                    }
-                  )
-                  .catch((error) => {
-                    console.error("Fetch error:", error);
-
-                    // Handle offline scenario
-                    // Store the unsynchronized change in AsyncStorage with a specific key
-                    AsyncStorage.getItem("unsynced_changes").then(
-                      (unsyncedChanges) => {
-                        let changes = unsyncedChanges
-                          ? JSON.parse(unsyncedChanges)
-                          : [];
-                        changes.push({
-                          action: "check",
-                          todoId: todo.id,
-                          done: !todo.done,
-                          title: todo.title,
-                          description: todo.description,
-                        });
-
-                        AsyncStorage.setItem(
-                          "unsynced_changes",
-                          JSON.stringify(changes)
-                        );
-                      }
-                    );
-                  });
-              }}
-            />
-          </View>
-        </View>
+        <Todo key={index} todo={todo} data={data} setData={setData} url={url} />
       ))}
       <StatusBar style="auto" />
     </ScrollView>
@@ -267,34 +175,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginTop: 100,
   },
-  inputContainer: {
-    margin: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 10,
-    marginBottom: 10,
-  },
-  todoItem: {
-    padding: 20,
-    paddingRight: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  todoTitle: {
-    fontWeight: "bold",
-  },
   head: {
     fontSize: 40,
     marginHorizontal: 20,
-  },
-  errorText: {
-    color: "red",
-    textAlign: "center",
-    marginVertical: 16,
   },
 });
