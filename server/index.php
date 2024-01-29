@@ -19,6 +19,8 @@ $params = [
     'description' => $_POST["description"] ?? null
 ];
 
+error_log("Request received with params: " . json_encode($params));
+
 
 //Le router traite les infos selon les requêtes
 
@@ -38,10 +40,10 @@ switch ($params['action']) {
         }
         break;
     case 'check':
-        if ($params['title'] && $params['description']) {
+        if (isset($params['title']) && isset($params['description'])) {
             $todos = TodoRepository::checkTodoOffline($params['title'], $params['description']);
             print_r($todos);
-        } else {
+        } elseif (isset($params['todoId']) && $params['todoId'] !== 'undefined') {
             $todos = TodoRepository::checkTodo($params['todoId']);
             print_r($todos);
         }

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import CheckBox from "expo-checkbox";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 export default function App() {
   const [data, setData] = useState([]);
@@ -18,12 +19,21 @@ export default function App() {
 
   const url = process.env.EXPO_PUBLIC_API_URL;
 
+  function timeoutFetch(url, options, timeout = 3000) {
+    return Promise.race([
+      fetch(url, options),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), timeout)
+      ),
+    ]);
+  }
+
   useEffect(() => {
     getData();
   }, []);
 
   function getData() {
-    fetch(url, {
+    timeoutFetch(url, {
       method: "POST",
     })
       .then((response) => {
@@ -106,22 +116,26 @@ export default function App() {
 
     setIsValid(true);
 
-    fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `action=create&title=${encodeURIComponent(
-        newTodo.title
-      )}&description=${encodeURIComponent(newTodo.description)}`,
-    })
-      .then((response) => response.json())
-      .then((newItem) => {
+    axios
+      .post(
+        url,
+        `action=create&title=${encodeURIComponent(
+          newTodo.title
+        )}&description=${encodeURIComponent(newTodo.description)}`,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          timeout: 2000,
+        }
+      )
+      .then((response) => {
+        const newItem = response.data;
         const updatedData = [...data, newItem];
         setData(updatedData);
         AsyncStorage.setItem("todos", JSON.stringify(updatedData));
       })
-      .then(getData())
+      .then(getData)
       .catch((error) => {
         const thenewtodo = {
           title: newTodo.title,
@@ -210,39 +224,42 @@ export default function App() {
                 setData(updatedData);
                 AsyncStorage.setItem("todos", JSON.stringify(updatedData));
 
-                const requestOptions = {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                  },
-                  body: `action=check&todoId=${encodeURIComponent(todo.id)}`,
-                };
-
-                fetch(url, requestOptions).catch((error) => {
-                  console.error("Fetch error:", error);
-
-                  // Handle offline scenario
-                  // Store the unsynchronized change in AsyncStorage with a specific key
-                  AsyncStorage.getItem("unsynced_changes").then(
-                    (unsyncedChanges) => {
-                      let changes = unsyncedChanges
-                        ? JSON.parse(unsyncedChanges)
-                        : [];
-                      changes.push({
-                        action: "check",
-                        todoId: todo.id,
-                        done: !todo.done,
-                        title: todo.title,
-                        description: todo.description,
-                      });
-
-                      AsyncStorage.setItem(
-                        "unsynced_changes",
-                        JSON.stringify(changes)
-                      );
+                axios
+                  .post(
+                    url,
+                    `action=check&todoId=${encodeURIComponent(todo.id)}`,
+                    {
+                      headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                      },
+                      timeout: 2000,
                     }
-                  );
-                });
+                  )
+                  .catch((error) => {
+                    console.error("Fetch error:", error);
+
+                    // Handle offline scenario
+                    // Store the unsynchronized change in AsyncStorage with a specific key
+                    AsyncStorage.getItem("unsynced_changes").then(
+                      (unsyncedChanges) => {
+                        let changes = unsyncedChanges
+                          ? JSON.parse(unsyncedChanges)
+                          : [];
+                        changes.push({
+                          action: "check",
+                          todoId: todo.id,
+                          done: !todo.done,
+                          title: todo.title,
+                          description: todo.description,
+                        });
+
+                        AsyncStorage.setItem(
+                          "unsynced_changes",
+                          JSON.stringify(changes)
+                        );
+                      }
+                    );
+                  });
               }}
             />
           </View>
