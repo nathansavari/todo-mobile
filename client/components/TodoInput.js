@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View, TextInput, Text, Pressable } from "react-native";
+import { Link } from "expo-router";
 
 const TodoInput = ({ newTodo, setNewTodo, createTodo, isValid }) => {
   return (
@@ -27,6 +28,7 @@ const TodoInput = ({ newTodo, setNewTodo, createTodo, isValid }) => {
           padding: 10,
           backgroundColor: "teal",
           alignItems: "center",
+          borderRadius: 4,
         }}
       >
         <Text style={{ color: "white" }}>Add Todo</Text>
