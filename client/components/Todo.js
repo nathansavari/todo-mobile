@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import CheckBox from "expo-checkbox";
-import { router } from "expo-router";
+import { Link } from "expo-router";
 
 const Todo = ({ todo, data, setData, url }) => {
   const handleValueChange = () => {
@@ -46,31 +46,36 @@ const Todo = ({ todo, data, setData, url }) => {
   };
 
   return (
-    <Pressable
-      style={styles.todoItem}
-      onPress={() => router.push(`/todo/${todo.id}`)}
-    >
-      <View>
-        <Text
-          style={
-            todo.done ? [styles.todoTitle, styles.todoDone] : styles.todoTitle
-          }
-        >
-          {todo.title}
-        </Text>
-        <Text>{todo.description}</Text>
-      </View>
-      <View>
-        <CheckBox value={todo.done} onValueChange={handleValueChange} />
-      </View>
-    </Pressable>
+    <View style={styles.todoItem}>
+      <Link
+        style={styles.todoLink}
+        href={{
+          pathname: "/todo/[id]",
+          params: {
+            title: todo.title,
+            description: todo.description,
+          },
+        }}
+      >
+        <View style={styles.todoText}>
+          <Text
+            style={
+              todo.done ? [styles.todoTitle, styles.todoDone] : styles.todoTitle
+            }
+          >
+            {todo.title}
+          </Text>
+          <Text>{todo.description}</Text>
+        </View>
+      </Link>
+      <CheckBox value={todo.done} onValueChange={handleValueChange} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   todoItem: {
     padding: 20,
-    paddingRight: 50,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
     flexDirection: "row",
@@ -82,6 +87,9 @@ const styles = StyleSheet.create({
   },
   todoDone: {
     textDecorationLine: "line-through",
+  },
+  todoLink: {
+    width: "90%",
   },
 });
 
